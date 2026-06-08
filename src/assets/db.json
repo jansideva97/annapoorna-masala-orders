@@ -1,0 +1,24 @@
+{
+  "products": [
+    {
+      "id": 1,
+      "name": "Sambar Masala",
+      "measurements": ["50g", "100g", "250g", "500g"]
+    },
+    {
+      "id": 2,
+      "name": "Chilli Powder",
+      "measurements": ["100g", "250g", "1kg"]
+    },
+    {
+      "id": 3,
+      "name": "Garam Masala",
+      "measurements": ["50g", "100g"]
+    },
+    {
+      "id": 4,
+      "name": "Turmeric Powder",
+      "measurements": ["100g", "250g", "500g"]
+    }
+  ]
+}
