@@ -50,30 +50,33 @@ header p {
   line-height: 1.6;
 }
 
-/* 🟢 UPDATED: Converted into a 3-column structural layout for modern box tabs */
+/* ========================================================
+   📱 4-Column Fluid Tab Layout Configuration
+   ======================================================== */
 .tabs {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr); /* 4 columns on desktop layouts */
   gap: 10px;
   margin: 16px 0 20px;
+  width: 100%;
 }
 
-/* Base style for the Tab Buttons acting as distinct clickable boxes */
 .tabs button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   min-height: 56px;
-  padding: 12px 16px;
+  padding: 12px 8px;
   border: 1px solid rgba(65, 105, 225, 0.2);
   border-radius: 14px;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(240, 244, 255, 0.85));
   color: var(--text);
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.2s ease, background 0.25s ease, border-color 0.25s ease, box-shadow 0.2s ease;
+  text-align: center;
 }
 
 .tabs button:hover {
@@ -82,7 +85,6 @@ header p {
   background: linear-gradient(135deg, #ffffff, #e6eeff);
 }
 
-/* 🟢 HIGHLIGHTED STATE: High contrast active styling with a crisp depth shadow */
 .tabs button.active {
   background: linear-gradient(135deg, #4169E1, #1E40AF);
   color: #fff;
@@ -91,18 +93,27 @@ header p {
   transform: translateY(-1px);
 }
 
-/* Specific active color spectrum for Tab 2 (Product Master) */
+/* Tab 2 (Product Master) Highlight Variant */
 .tabs button.active:nth-child(2) {
   background: linear-gradient(135deg, #1E3A8A, #4169E1);
   box-shadow: 0 10px 25px rgba(30, 58, 138, 0.35);
 }
 
-/* 🟢 Specific active color spectrum for Tab 3 (Saved Receipts Box Highlight) */
+/* Tab 3 (Saved Receipts) Highlight Variant */
 .tabs button.active:nth-child(3) {
-  background: linear-gradient(135deg, #10B981, #047857); /* Modern Success Green Box Matrix */
+  background: linear-gradient(135deg, #10B981, #047857); 
   box-shadow: 0 10px 25px rgba(16, 185, 129, 0.35);
 }
 
+/* Tab 4 (Saved Address) Royal Purple Highlight Variant */
+.tabs button.active:nth-child(4) {
+  background: linear-gradient(135deg, #7C3AED, #5B21B6); 
+  box-shadow: 0 10px 25px rgba(124, 58, 237, 0.35);
+}
+
+/* ========================================================
+   Content Panels & Layout Utilities
+   ======================================================== */
 .section-panel {
   padding: 20px;
   border-radius: 24px;
@@ -170,6 +181,7 @@ header p {
   background: rgba(65, 105, 225, 0.08);
 }
 
+/* Buttons Mechanics */
 .btn {
   padding: 14px 18px;
   border-radius: 14px;
@@ -219,9 +231,13 @@ header p {
   margin: 22px 0 0;
 }
 
+/* ========================================================
+   🏎️ Touch Screen Active Table Adjustments
+   ======================================================== */
 .table-responsive {
   width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border-radius: 18px;
   border: 1px solid rgba(65, 105, 225, 0.2);
   margin-top: 18px;
@@ -230,15 +246,16 @@ header p {
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 520px;
+  min-width: 680px; 
 }
 
 .data-table th,
 .data-table td {
-  padding: 16px 18px;
+  padding: 14px 16px;
   font-size: 0.95rem;
   color: #1a1a1a;
   border-bottom: 1px solid rgba(65, 105, 225, 0.15);
+  vertical-align: middle;
 }
 
 .data-table th {
@@ -246,6 +263,13 @@ header p {
   color: #1E40AF;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+.data-table input[type="number"] {
+  height: 38px;
+  padding: 6px;
+  font-size: 14px !important;
+  border-radius: 8px;
 }
 
 .data-table tr:hover td {
@@ -274,10 +298,11 @@ header p {
   color: #666666;
 }
 
+/* Modals overlays setup */
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -306,6 +331,9 @@ header p {
   gap: 12px;
 }
 
+/* ========================================================
+   🎯 Responsive Media Breakpoint Rules (Infinix / Vivo UI Fixes)
+   ======================================================= */
 @media (min-width: 640px) {
   .action-buttons,
   .modal-actions {
@@ -318,11 +346,59 @@ header p {
   }
 }
 
-@media (max-width: 639px) {
-  /* Stack tab boxes elements vertically cleanly on small phone screens */
+@media (max-width: 768px) {
+  .tabs {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  
+  .tabs button {
+    min-height: 50px;
+    padding: 10px 8px;
+    font-size: 0.88rem;
+  }
+}
+
+@media (max-width: 480px) {
+  /* 🟢 BUG FIX: Narrow down the outer layout container width slightly away from phone side-panel gestures */
+  .container {
+    padding: 10px 28px !important; /* Inward padding prevents hardware sidebar overlap */
+  }
+
+  .section-panel {
+    padding: 14px !important;
+    border-radius: 16px !important;
+  }
+
+  .form-container {
+    padding: 14px !important;
+    gap: 12px !important;
+  }
+
   .tabs {
     grid-template-columns: 1fr;
     gap: 6px;
+  }
+  
+  .tabs button {
+    min-height: 48px;
+    font-size: 0.92rem;
+  }
+
+  .action-buttons, 
+  .modal-actions {
+    grid-template-columns: 1fr !important;
+  }
+  
+  div[style*="display: flex"] {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+  
+  div[style*="display: flex"] button,
+  div[style*="display: flex"] input {
+    width: 100% !important;
   }
 }
 

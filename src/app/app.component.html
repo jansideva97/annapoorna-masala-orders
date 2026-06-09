@@ -218,6 +218,27 @@
   </div>
 
   <div *ngIf="activeTab === 'address'">
+    
+    <div class="form-container" style="background: linear-gradient(135deg, #f0f4ff 0%, #e6eeff 100%); border: 2px dashed #4169E1; margin-bottom: 25px;">
+      <h3 style="margin-top:0; color:#1E3A8A; font-size: 1.15rem; display: flex; align-items: center; gap: 8px;">
+        💾 Data Migration Control Box (Device Transfer)
+      </h3>
+      <p style="font-size: 13px; color: #4b5563; margin: 0 0 15px;">
+        Export your complete dataset to move your addresses, receipts, and configurations to another phone or computer instantly.
+      </p>
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+        <button type="button" (click)="exportLocalStorageData()" class="btn btn-primary" style="padding: 10px; font-size: 0.95rem;">
+          📤 Export Full System Data (.json)
+        </button>
+        
+        <label class="btn btn-success" style="padding: 10px; font-size: 0.95rem; margin:0; cursor:pointer; text-align:center; display: inline-flex; align-items: center; justify-content: center;">
+          📥 Import Data from File
+          <input type="file" (change)="importLocalStorageData($event)" accept=".json" style="display: none;" />
+        </label>
+      </div>
+    </div>
+
     <form [formGroup]="addressForm" (ngSubmit)="saveAddress()" class="form-container">
       <div class="form-group">
         <label for="addressStoreName">Store Name Identity:</label>
@@ -341,7 +362,7 @@
         <label for="modalContact">Contact Number (10-Digit Mobile):</label>
         <input id="modalContact" type="text" [(ngModel)]="storeContact" maxLength="10" placeholder="e.g., 9840123456" />
         <div *ngIf="storeContact && !isValidContact(storeContact)" style="color: #EF4444; font-size: 12px; font-weight: 600;">
-          * Contact spacing structure length must be exactly 10 digits.
+          * Contact length must be exactly 10 digits.
         </div>
       </div>
 

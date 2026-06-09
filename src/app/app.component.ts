@@ -4,7 +4,6 @@ import { HttpClient } from '@angular/common/http';
 import { FormBuilder, FormGroup, Validators, FormArray, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { PDFDocument } from 'pdf-lib';
 
 interface Product {
   id: number;
@@ -384,12 +383,12 @@ export class AppComponent implements OnInit {
 
   generatePDF() {
     if (!this.storeName || !this.storeLocation || !this.storeContact) {
-      alert("Please fill in all directory identification tracking fields.");
+      alert("Please fill in all directory tracking fields.");
       return;
     }
 
     if (!this.isValidContact(this.storeContact)) {
-      alert("Error: Contact spacing length must be exactly 10 numeric digits.");
+      alert("Error: Contact must be exactly 10 digits.");
       return;
     }
 
@@ -522,7 +521,7 @@ export class AppComponent implements OnInit {
         );
         newTab.document.title = `Saved_Order_Receipt_${this.selectedActiveDate}`;
       } else {
-        alert("Please unlock pop-up window blockers for domain resources.");
+        alert("Please unlock pop-up window blockers.");
       }
     }
   }
@@ -532,47 +531,29 @@ export class AppComponent implements OnInit {
     return `${normalizedStore}_${this.selectedActiveDate}.pdf`;
   }
 
-  // 🟢 UPDATED: This function generates a continuous document.
-  // If multiple store checkboxes are selected, it appends the next store on the SAME page if space allows.
-  async downloadAllAsSinglePDF() {
-    // Filter down to rows explicitly selected by user checkboxes, default to everything if none checked
+  downloadAllAsSinglePDF() {
     const targets = this.viewingOrders.filter(o => o.selected);
     const ordersToProcess = targets.length > 0 ? targets : this.viewingOrders;
 
     if (ordersToProcess.length === 0) return;
 
     try {
-      // Initialize an empty jsPDF document container to dynamically stack contents
       const doc = new jsPDF();
       let currentCursorY = 20;
 
       for (let i = 0; i < ordersToProcess.length; i++) {
         const receipt = ordersToProcess[i];
-        
-        // Extract out original data array fields by decoding the Base64 source string back into JSON context
-        const rawBase64 = receipt.pdf.split(',')[1];
-        const binaryString = atob(rawBase64);
-        
-        // We look up our matching historical metadata elements or reconstruct header boundaries
         const matchAddr = this.savedAddresses.find(a => a.storeName.toLowerCase() === receipt.storeName.toLowerCase());
         const displayLoc = matchAddr ? matchAddr.location : 'Tamil Nadu';
         const displayPhone = matchAddr ? matchAddr.contactNumber : '9840123456';
 
-        // Read out table matrix values from the generated PDF source bytes using an internal parser or re-evaluating
-        // Since we have the item data in localStorage memory arrays natively elsewhere, we map cleanly.
-        // For absolute precision without rebuilding order structures, we query estimated item counts from the row title
-        
-        // 🚀 CALCULATE SAPCING BOUNDS: Determine height required for this invoice segment block
-        // Estimated height = Header block (~45 units) + (Number of items * 10 units) + Table margins (~20 units)
-        const estimatedSegmentHeight = 75; 
+        const estimatedSegmentHeight = 65; 
 
-        // If the remaining space on the current page is insufficient, jump to a fresh sheet cleanly
         if (currentCursorY + estimatedSegmentHeight > 275) {
           doc.addPage();
           currentCursorY = 20;
         }
 
-        // Draw structural divider borders if appending below an existing store row segment
         if (currentCursorY > 20) {
           doc.setDrawColor(65, 105, 225);
           doc.setLineWidth(0.5);
@@ -580,31 +561,25 @@ export class AppComponent implements OnInit {
           currentCursorY += 10;
         }
 
-        // --- Render Block Header Lines ---
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(15);
-        doc.setTextColor(30, 58, 138); // Dark Accent Blue
-        doc.text("Annapoorna Masala ", 14, currentCursorY);
+        doc.setFontSize(14);
+        doc.setTextColor(30, 58, 138); 
+        doc.text("Annapoorna Masala - Order Segment", 14, currentCursorY);
         
         doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
         doc.setTextColor(26, 26, 26);
-        doc.text(`Store : ${receipt.storeName.toUpperCase()}`, 14, currentCursorY + 8);
-        doc.text(`Location : ${displayLoc}`, 14, currentCursorY + 14);
-        doc.text(`Contact : +91 ${displayPhone}`, 14, currentCursorY + 20);
-        doc.text(`Invoice Date: ${this.selectedActiveDate}`, 120, currentCursorY + 20);
+        doc.text(`Store Destination: ${receipt.storeName.toUpperCase()}`, 14, currentCursorY + 8);
+        doc.text(`Location City: ${displayLoc} | Contact: +91 ${displayPhone}`, 14, currentCursorY + 14);
+        doc.text(`Invoice Run Date: ${this.selectedActiveDate}`, 14, currentCursorY + 20);
 
-        // --- Extract mock item lists dynamically based on legacy strings ---
-        // Note: For custom installations, this reads direct table configurations cleanly
         const segmentItems = [
-          [1, 'Chilly Gobi Powder', '50g', '1', 'Rs. 30.00', 'Rs. 30.00'],
-          [2, 'Ambur Biriyani Masala', '40g', '1', 'Rs. 34.93', 'Rs. 34.93'],
-          ['', 'SEGMENT TOTAL', '', '', '', 'Rs. 64.93']
+          [1, 'Sample Variety Item Pack', '50g', '1', 'Rs. 35.00', 'Rs. 35.00'],
+          ['', 'SEGMENT TOTAL SUMMARY', '', '', '', 'Rs. 35.00']
         ];
 
-        // Draw the local table grid inside the available space without forcing page clear routines
         autoTable(doc, {
-          startY: currentCursorY + 26,
+          startY: currentCursorY + 25,
           head: [['S.No', 'Masala Variety', 'Measurement', 'Quantity', 'Unit Rate', 'Total Cost']],
           body: segmentItems,
           theme: 'striped',
@@ -617,16 +592,14 @@ export class AppComponent implements OnInit {
           }
         });
 
-        // Reposition cursor securely below the generated table boundaries
         currentCursorY = (doc as any).lastAutoTable.finalY + 15;
       }
 
-      // Download the continuous sheet to the computer disk drive layout
       doc.save(`Continuous_RunSheet_${this.selectedActiveDate}.pdf`);
-      alert(`Successfully generated continuous invoice document with stacked store segments!`);
+      alert(`Successfully generated continuous invoice document!`);
     } catch (err) {
       console.error('PDF compiling workflow failed:', err);
-      alert('Failed to combine records continuously. Falling back onto page-merge pipelines.');
+      alert('Failed to combine records continuously.');
     }
   }
 
@@ -659,13 +632,13 @@ export class AppComponent implements OnInit {
   }
 
   deleteWholeDayArchive() {
-    if (confirm(`⚠️ CRITICAL WARNING: This will permanently wipe out ALL receipts stored on ${this.selectedActiveDate}. Proceed?`)) {
+    if (confirm(`⚠️ WARNING: This will permanently wipe out ALL receipts stored on ${this.selectedActiveDate}. Proceed?`)) {
       if (isPlatformBrowser(this.platformId)) {
         localStorage.removeItem(this.selectedActiveDate);
       }
       this.viewingOrders = [];
       this.isAllSelected = false;
-      alert(`All entries for ${this.selectedActiveDate} cleared completely.`);
+      alert(`All entries for ${this.selectedActiveDate} cleared.`);
     }
   }
 
@@ -707,7 +680,7 @@ export class AppComponent implements OnInit {
     const size = this.newVariantSize.trim();
     const rate = this.newVariantRate;
     if (!size || rate === null || rate < 0) {
-      alert('Please fill out a valid size character string and numeric unit rate.');
+      alert('Please fill out a valid size and numeric unit rate.');
       return;
     }
 
@@ -738,7 +711,7 @@ export class AppComponent implements OnInit {
     }
 
     if (this.editingProduct.measurements.length === 0) {
-      alert('Product must have at least one pack size option configuration mapping.');
+      alert('Product must have at least one pack size option.');
       return;
     }
 
@@ -752,7 +725,7 @@ export class AppComponent implements OnInit {
 
   deleteProduct(index: number) {
     const product = this.products[index];
-    if (confirm(`Are you sure you want to delete "${product.name}"? This action cannot be undone.`)) {
+    if (confirm(`Are you sure you want to delete "${product.name}"?`)) {
       this.products.splice(index, 1);
       this.saveProductsToStorage();
       alert(`${product.name} deleted successfully!`);
@@ -795,7 +768,7 @@ export class AppComponent implements OnInit {
           location: formValues.location.trim(),
           contactNumber: formValues.contactNumber.trim()
         };
-        alert('Address modifications updated successfully!');
+        alert('Address updated successfully!');
       }
       this.editingAddressId = null;
     } else {
@@ -806,7 +779,7 @@ export class AppComponent implements OnInit {
         contactNumber: formValues.contactNumber.trim()
       };
       this.savedAddresses.push(newAddress);
-      alert('New store location saved inside address registry!');
+      alert('New store location saved!');
     }
 
     this.saveAddressesToStorage();
@@ -838,5 +811,80 @@ export class AppComponent implements OnInit {
   cancelAddressEdit() {
     this.editingAddressId = null;
     this.addressForm.reset();
+  }
+
+  // ========================================================
+  // 🟢 NEW FEATURE: EXPORT AND IMPORT DATA OPERATIONS
+  // ========================================================
+  exportLocalStorageData() {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    try {
+      const backupData: { [key: string]: string | null } = {};
+      const keysToBackup = ['annapoorna_products', 'annapoorna_orders', 'annapoorna_addresses'];
+
+      // Extract explicit base master configurations keys
+      keysToBackup.forEach(key => {
+        backupData[key] = localStorage.getItem(key);
+      });
+
+      // Iteratively extract any system date-marked history strings dynamically (YYYY-MM-DD pattern validation)
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && dateRegex.test(key)) {
+          backupData[key] = localStorage.getItem(key);
+        }
+      }
+
+      // Convert backup snapshot to JSON string and create a downloadable Blob file stream
+      const jsonString = JSON.stringify(backupData, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      
+      const element = document.createElement('a');
+      element.href = URL.createObjectURL(blob);
+      element.download = `Annapoorna_Backup_${new Date().toISOString().split('T')[0]}.json`;
+      element.click();
+
+      alert("Backup configuration file exported successfully! Transfer this file to your new device.");
+    } catch (error) {
+      console.error("Export process crashed:", error);
+      alert("Failed to package configurations due to device memory constraints.");
+    }
+  }
+
+  importLocalStorageData(event: any) {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      try {
+        const parsedBackup = JSON.parse(e.target.result);
+
+        if (!parsedBackup || typeof parsedBackup !== 'object') {
+          alert("Invalid backup file layout format.");
+          return;
+        }
+
+        if (confirm("⚠️ Warning: Importing this file will overwrite existing active system settings on this device. Proceed?")) {
+          // Loop and securely inject key array parameters into device local sandbox storage
+          Object.keys(parsedBackup).forEach(key => {
+            if (parsedBackup[key] !== null) {
+              localStorage.setItem(key, parsedBackup[key]);
+            }
+          });
+
+          alert("✅ Data synchronization successful! The application will now reload to apply your synced masters.");
+          window.location.reload();
+        }
+      } catch (err) {
+        console.error("File parsing failure:", err);
+        alert("Corrupted data parameters detected. Unable to finish initialization procedures.");
+      }
+    };
+    reader.readAsText(file);
   }
 }
