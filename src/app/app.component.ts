@@ -551,27 +551,34 @@ async downloadAllAsSinglePDF() {
     let currentCursorY = 20;
 
     for (const receipt of ordersToProcess) {
-      // Fetch items, fallback to empty array if missing
-      const items = receipt.items || [];
-      
-      // Calculate dynamic height needed
-      const estimatedHeight = 50 + (items.length * 10);
+      // 🟢 1. LOOKUP: Find address details from your savedAddresses array
+      const matchAddr = this.savedAddresses.find(
+        (a) => a.storeName.toLowerCase() === receipt.storeName.toLowerCase()
+      );
+      const displayLoc = matchAddr ? matchAddr.location : 'Location not found';
+      const displayContact = matchAddr ? matchAddr.contactNumber : 'N/A';
 
-      // Check for page overflow
+      const items = receipt.items || [];
+      const estimatedHeight = 65 + (items.length * 10); // Increased buffer for address lines
+
       if (currentCursorY + estimatedHeight > 275) {
         doc.addPage();
         currentCursorY = 20;
       }
 
-      // Draw Store Header
+      // 🟢 2. DRAW HEADER: Includes Store Name, Location, and Contact
       doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
       doc.text(`Store: ${receipt.storeName}`, 14, currentCursorY);
+      
       doc.setFontSize(10);
       doc.text(`Date: ${this.selectedActiveDate}`, 150, currentCursorY);
+      doc.text(`Location: ${displayLoc}`, 14, currentCursorY + 6);
+      doc.text(`Contact: ${displayContact}`, 14, currentCursorY + 12);
 
-      // Draw Table
+      // 3. Draw Table
       autoTable(doc, {
-        startY: currentCursorY + 10,
+        startY: currentCursorY + 16, // Shifted down to accommodate address lines
         head: [['S.No', 'Variety', 'Size', 'Qty', 'Rate', 'Total']],
         body: items.length > 0 
           ? items.map((item, idx) => [idx + 1, item.productName, item.measurement, item.quantity, `Rs. ${item.rate}`, `Rs. ${item.totalPrice}`])
