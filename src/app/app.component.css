@@ -50,13 +50,15 @@ header p {
   line-height: 1.6;
 }
 
+/* 🟢 UPDATED: Converted into a 3-column structural layout for modern box tabs */
 .tabs {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  margin: 16px 0 0;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 16px 0 20px;
 }
 
+/* Base style for the Tab Buttons acting as distinct clickable boxes */
 .tabs button {
   display: inline-flex;
   align-items: center;
@@ -64,30 +66,41 @@ header p {
   gap: 8px;
   min-height: 56px;
   padding: 12px 16px;
-  border: 1px solid transparent;
+  border: 1px solid rgba(65, 105, 225, 0.2);
   border-radius: 14px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.7));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(240, 244, 255, 0.85));
   color: var(--text);
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.2s ease, background 0.25s ease, border-color 0.25s ease;
+  transition: transform 0.2s ease, background 0.25s ease, border-color 0.25s ease, box-shadow 0.2s ease;
 }
 
 .tabs button:hover {
-  transform: translateY(-1px);
-  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  border-color: #4169E1;
+  background: linear-gradient(135deg, #ffffff, #e6eeff);
 }
 
+/* 🟢 HIGHLIGHTED STATE: High contrast active styling with a crisp depth shadow */
 .tabs button.active {
   background: linear-gradient(135deg, #4169E1, #1E40AF);
   color: #fff;
-  box-shadow: 0 12px 30px rgba(65, 105, 225, 0.3);
+  box-shadow: 0 10px 25px rgba(65, 105, 225, 0.35);
   border-color: transparent;
+  transform: translateY(-1px);
 }
 
+/* Specific active color spectrum for Tab 2 (Product Master) */
 .tabs button.active:nth-child(2) {
   background: linear-gradient(135deg, #1E3A8A, #4169E1);
+  box-shadow: 0 10px 25px rgba(30, 58, 138, 0.35);
+}
+
+/* 🟢 Specific active color spectrum for Tab 3 (Saved Receipts Box Highlight) */
+.tabs button.active:nth-child(3) {
+  background: linear-gradient(135deg, #10B981, #047857); /* Modern Success Green Box Matrix */
+  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.35);
 }
 
 .section-panel {
@@ -163,17 +176,21 @@ header p {
   font-size: 1rem;
   font-weight: 700;
   width: 100%;
+  border: none;
+  cursor: pointer;
   transition: transform 0.2s ease, filter 0.2s ease;
 }
 
 .btn:hover:not(:disabled) {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
   filter: brightness(1.05);
 }
 
 .btn:disabled {
   background: rgba(148, 163, 184, 0.32) !important;
   cursor: not-allowed;
+  transform: none !important;
+  filter: none !important;
 }
 
 .btn-primary {
@@ -182,7 +199,7 @@ header p {
 }
 
 .btn-success {
-  background: linear-gradient(135deg, #4169E1, #1E3A8A);
+  background: linear-gradient(135deg, #10B981, #059669);
   color: white;
 }
 
@@ -298,6 +315,14 @@ header p {
   .action-buttons .btn,
   .modal-actions .btn {
     width: 100%;
+  }
+}
+
+@media (max-width: 639px) {
+  /* Stack tab boxes elements vertically cleanly on small phone screens */
+  .tabs {
+    grid-template-columns: 1fr;
+    gap: 6px;
   }
 }
 

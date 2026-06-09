@@ -6,6 +6,8 @@
   <div class="tabs">
     <button [class.active]="activeTab === 'order'" (click)="activeTab = 'order'">Order Entry</button>
     <button [class.active]="activeTab === 'master'" (click)="activeTab = 'master'">Product Master</button>
+    <button [class.active]="activeTab === 'saved'" (click)="loadSavedDates(); activeTab = 'saved'">Saved Receipts</button>
+    <button [class.active]="activeTab === 'address'" (click)="activeTab = 'address'">Saved Address</button>
   </div>
 
   <div *ngIf="activeTab === 'order'">
@@ -20,10 +22,15 @@
 
       <div class="form-group">
         <label for="measurementSelect">Measurement Size:</label>
-        <select id="measurementSelect" formControlName="measurement">
+        <select id="measurementSelect" formControlName="measurement" (change)="onMeasurementChange($event)">
           <option value="">-- Choose Size --</option>
           <option *ngFor="let size of selectedProductSizes" [value]="size">{{ size }}</option>
         </select>
+      </div>
+
+      <div class="form-group">
+        <label for="rateInput">Unit Price Rate (Rs.):</label>
+        <input id="rateInput" type="number" formControlName="manualRate" placeholder="e.g., 45.00" step="0.01" min="0.01" />
       </div>
 
       <div class="form-group">
@@ -42,7 +49,10 @@
             <th>Sl.No</th>
             <th>Masala Variety</th>
             <th>Measurement</th>
-            <th>Quantity</th>
+            <th style="width: 110px;">Quantity</th>
+            <th style="width: 140px;">Unit Rate (Rs.)</th>
+            <th>Total Cost</th>
+            <th style="text-align: center;">Action</th>
           </tr>
         </thead>
         <tbody>
@@ -50,10 +60,38 @@
             <td>{{ idx + 1 }}</td>
             <td>{{ item.productName }}</td>
             <td>{{ item.measurement }}</td>
-            <td>{{ item.quantity }}</td>
+            
+            <td>
+              <input type="number" 
+                     [(ngModel)]="item.quantity" 
+                     (change)="updateInlineValues(idx)" 
+                     min="1" 
+                     style="width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(65, 105, 225, 0.25); font-weight: 600; text-align: center;" />
+            </td>
+            
+            <td>
+              <input type="number" 
+                     [(ngModel)]="item.rate" 
+                     (change)="updateInlineValues(idx)" 
+                     min="0" 
+                     step="0.01" 
+                     style="width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(65, 105, 225, 0.25); font-weight: 600; text-align: center;" />
+            </td>
+            
+            <td><strong>Rs. {{ item.totalPrice.toFixed(2) }}</strong></td>
+            
+            <td style="text-align: center; padding: 8px;">
+              <button type="button" (click)="removeCartItem(idx)" class="btn btn-danger" style="width: auto; padding: 6px 12px; font-size: 13px; font-weight: 600; border-radius: 8px;">
+                Delete
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="savedOrders.length > 0" style="background: rgba(65, 105, 225, 0.05); font-weight: bold; border-top: 2px solid #4169E1;">
+            <td colspan="5" style="text-align: right; color: #1E40AF; padding: 14px;">GRAND TOTAL:</td>
+            <td colspan="2" style="color: #1E40AF; padding: 14px;">Rs. {{ getCartGrandTotal().toFixed(2) }}</td>
           </tr>
           <tr *ngIf="savedOrders.length === 0">
-            <td colspan="4" style="text-align: center; color: #757575; padding: 20px;">No current items added.</td>
+            <td colspan="7" style="text-align: center; color: #757575; padding: 20px;">No current items added.</td>
           </tr>
         </tbody>
       </table>
@@ -98,7 +136,11 @@
         <div style="display: flex; justify-content: space-between; align-items: start; gap: 12px;">
           <div style="flex: 1;">
             <strong>{{ prod.name }}</strong>
-            <div style="font-size: 13px; color: #666; margin-top: 4px;">Configured Pack Sizes: {{ prod.measurements.join(', ') }}</div>
+            <div style="font-size: 13px; color: #333; margin-top: 8px; display: flex; flex-wrap: wrap; gap: 10px;">
+              <span *ngFor="let sz of prod.measurements" style="background: rgba(65, 105, 225, 0.06); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(65, 105, 225, 0.15);">
+                Size: <strong>{{ sz }}</strong> — Rate: <strong>Rs. {{ prod.pricing?.[sz] || 0 }}</strong>
+              </span>
+            </div>
           </div>
           <div style="display: flex; gap: 8px;">
             <button (click)="editProduct(i)" class="btn btn-primary" style="width: auto; padding: 8px 12px; font-size: 0.85rem;">Edit</button>
@@ -109,29 +151,155 @@
     </ul>
   </div>
 
+  <div *ngIf="activeTab === 'saved'">
+    <div class="form-container" style="margin-bottom: 20px;">
+      <div class="form-group">
+        <label for="dateSearch">Select Date to View Orders:</label>
+        <input id="dateSearch" type="date" [(ngModel)]="searchDate" (change)="onDateSelect()" class="form-control" />
+      </div>
+    </div>
+
+    <div *ngIf="viewingOrders.length > 0" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px;">
+      <label style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; color: #1E40AF;">
+        <input type="checkbox" [(ngModel)]="isAllSelected" (change)="toggleSelectAll()" style="transform: scale(1.15);" />
+        Select All Rows
+      </label>
+
+      <div style="display: flex; gap: 10px;">
+        <button (click)="deleteSelectedReceipts()" [disabled]="!hasSelectedOrders()" class="btn btn-danger" style="width: auto; padding: 8px 14px; font-size: 0.9rem;">
+          Delete Selected
+        </button>
+        <button (click)="deleteWholeDayArchive()" class="btn btn-danger" style="width: auto; padding: 8px 14px; font-size: 0.9rem; background: linear-gradient(135deg, #7f1d1d, #b91c1c);">
+          Clear Whole Day
+        </button>
+      </div>
+    </div>
+
+    <h3>Receipt Archives Found</h3>
+    
+    <div *ngIf="viewingOrders.length > 0; else noReceiptsTemplate">
+      <ul class="master-list">
+        <li *ngFor="let receipt of viewingOrders; let receiptIdx = index">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+            
+            <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+              <input type="checkbox" [(ngModel)]="receipt.selected" (change)="checkIndividualSelection()" style="transform: scale(1.15); cursor: pointer;" />
+              <div>
+                <strong>{{ receipt.storeName || 'Unknown Store Location' }}</strong>
+                <div style="font-size: 13px; color: #666; margin-top: 4px;">Saved Date: {{ selectedActiveDate }}</div>
+              </div>
+            </div>
+            
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button (click)="openSavedPdf(receipt.pdf)" class="btn btn-success" style="width: auto; padding: 8px 14px; font-size: 14px;">
+                Open PDF
+              </button>
+              
+              <a [href]="receipt.pdf" 
+                 [download]="getDownloadFileName(receipt.storeName)" 
+                 class="btn btn-primary" 
+                 style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center; width: auto; padding: 8px 14px; font-size: 14px; text-align: center; height: 35px;">
+                Download
+              </a>
+
+              <button (click)="deleteIndividualReceipt(receiptIdx)" class="btn btn-danger" style="width: auto; padding: 8px 12px; font-size: 14px; height: 35px; display: inline-flex; align-items: center; justify-content: center;">
+                Delete
+              </button>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <ng-template #noReceiptsTemplate>
+      <div style="text-align: center; color: #757575; padding: 40px; background: #f9f9f9; border-radius: 8px; border: 1px dashed #ccc;">
+        No local storage backup files found for the selected date context.
+      </div>
+    </ng-template>
+  </div>
+
+  <div *ngIf="activeTab === 'address'">
+    <form [formGroup]="addressForm" (ngSubmit)="saveAddress()" class="form-container">
+      <div class="form-group">
+        <label for="addressStoreName">Store Name Identity:</label>
+        <input id="addressStoreName" type="text" formControlName="storeName" placeholder="e.g., Saravana Stores" />
+      </div>
+
+      <div class="form-group">
+        <label for="addressLocation">Store Location Details (City/Area):</label>
+        <input id="addressLocation" type="text" formControlName="location" placeholder="e.g., T. Nagar, Chennai" />
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button type="submit" [disabled]="addressForm.invalid" class="btn btn-success" style="flex: 2;">
+          {{ editingAddressId !== null ? 'Update Store Address' : 'Save New Address' }}
+        </button>
+        <button type="button" *ngIf="editingAddressId !== null" (click)="cancelAddressEdit()" class="btn btn-secondary" style="flex: 1;">
+          Cancel
+        </button>
+      </div>
+    </form>
+
+    <h3>Configured Store Address Directory</h3>
+    
+    <div *ngIf="savedAddresses.length > 0; else noAddressesTemplate">
+      <ul class="master-list">
+        <li *ngFor="let addr of savedAddresses; let addrIdx = index">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+            <div style="flex: 1;">
+              <strong>{{ addr.storeName }}</strong>
+              <div style="font-size: 14px; color: #333; margin-top: 4px;">
+                📍 Location: <span style="font-weight: 600; color: #1E40AF;">{{ addr.location }}</span>
+              </div>
+            </div>
+            
+            <div style="display: flex; gap: 8px;">
+              <button (click)="editAddress(addr)" class="btn btn-primary" style="width: auto; padding: 8px 16px; font-size: 0.85rem;">
+                Edit
+              </button>
+              <button (click)="deleteAddress(addrIdx)" class="btn btn-danger" style="width: auto; padding: 8px 16px; font-size: 0.85rem;">
+                Delete
+              </button>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <ng-template #noAddressesTemplate>
+      <div style="text-align: center; color: #757575; padding: 40px; background: #f9f9f9; border-radius: 8px; border: 1px dashed #ccc;">
+        No store locations tracked in your directory profile.
+      </div>
+    </ng-template>
+  </div>
+
   <div class="modal" *ngIf="showEditModal">
-    <div class="modal-content">
-      <h3>{{ editingProductId !== null ? 'Edit Product' : 'Add Variant' }}</h3>
+    <div class="modal-content" style="max-width: 500px;">
+      <h3>Edit Variant Base Inventory Config</h3>
       <div class="form-group">
         <label for="editProductName">Product Name:</label>
         <input id="editProductName" type="text" [(ngModel)]="editingProduct.name" />
       </div>
+      
       <div class="form-group">
-        <label>Pack Sizes:</label>
-        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
-          <div *ngFor="let size of editingProduct.measurements; let idx = index" style="display: flex; align-items: center; gap: 6px; background: rgba(65, 105, 225, 0.1); padding: 8px 12px; border-radius: 8px;">
-            <span>{{ size }}</span>
-            <button type="button" (click)="removeVariant(idx)" style="background: none; border: none; color: red; cursor: pointer; font-weight: bold; padding: 0;">×</button>
+        <label>Current Pack Sizes & Rates:</label>
+        <div style="display: flex; flex-direction: column; gap: 8px; max-height: 160px; overflow-y: auto; padding: 4px;">
+          <div *ngFor="let size of editingProduct.measurements; let idx = index" style="display: flex; align-items: center; justify-content: space-between; background: rgba(65, 105, 225, 0.08); padding: 8px 14px; border-radius: 8px;">
+            <span>{{ size }} — <strong>Rs. {{ editingProduct.pricing?.[size] || 0 }}</strong></span>
+            <button type="button" (click)="removeVariant(idx)" style="background: none; border: none; color: red; cursor: pointer; font-weight: bold; font-size: 16px;">×</button>
           </div>
         </div>
       </div>
-      <div class="form-group">
-        <label for="editNewVariant">Add New Pack Size:</label>
-        <div style="display: flex; gap: 8px;">
-          <input id="editNewVariant" type="text" [(ngModel)]="newVariantSize" placeholder="e.g., 750g" style="flex: 1;" />
-          <button type="button" (click)="addVariantToEdit()" class="btn btn-secondary" style="width: auto; padding: 8px 12px;">Add</button>
+
+      <div class="form-group" style="background: rgba(0,0,0,0.02); padding: 12px; border-radius: 12px; border: 1px dashed #ccc;">
+        <label style="font-size: 13px;">Add Pack Size Expansion Option:</label>
+        <div style="display: flex; gap: 8px; margin-top: 6px;">
+          <input type="text" [(ngModel)]="newVariantSize" placeholder="e.g., 750g" style="flex: 2; padding: 8px;" />
+          <input type="number" [(ngModel)]="newVariantRate" placeholder="Price" style="flex: 1; padding: 8px;" />
+          <button type="button" (click)="addVariantToEdit()" class="btn btn-secondary" style="width: auto; padding: 4px 14px;">Add</button>
         </div>
       </div>
+
       <div class="modal-actions">
         <button (click)="saveEditedProduct()" class="btn btn-success">Save Changes</button>
         <button (click)="closeEditModal()" class="btn btn-secondary">Cancel</button>
@@ -144,8 +312,18 @@
       <h3>Invoice Details Required</h3>
       <div class="form-group">
         <label for="modalStoreName">Store Name Identity:</label>
-        <input id="modalStoreName" type="text" [(ngModel)]="storeName" placeholder="e.g., Saravana Stores" />
+        <input id="modalStoreName" 
+               type="text" 
+               [(ngModel)]="storeName" 
+               (input)="autoFillModalLocation()" 
+               list="autocompleteStores"
+               placeholder="e.g., Saravana Stores" />
+               
+        <datalist id="autocompleteStores">
+          <option *ngFor="let addr of savedAddresses" [value]="addr.storeName"></option>
+        </datalist>
       </div>
+      
       <div class="form-group">
         <label for="modalLocation">Store Location City:</label>
         <input id="modalLocation" type="text" [(ngModel)]="storeLocation" placeholder="e.g., Chennai" />
