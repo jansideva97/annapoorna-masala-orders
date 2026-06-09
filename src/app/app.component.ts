@@ -4,6 +4,8 @@ import { HttpClient } from '@angular/common/http';
 import { FormBuilder, FormGroup, Validators, FormArray, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+// 🟢 Explicit import of PDFDocument from pdf-lib to clear compiler errors
+import { PDFDocument } from 'pdf-lib';
 
 interface Product {
   id: number;
@@ -24,6 +26,7 @@ interface SavedReceiptMetadata {
   storeName: string;
   pdf: string;
   selected?: boolean;
+  items?: OrderItem[]; // 🟢 Added optional typed metadata array to cache raw card configurations
 }
 
 interface StoreAddress {
@@ -113,7 +116,7 @@ export class AppComponent implements OnInit {
 
   // --- Product Master ---
   loadProductMaster() {
-    // 🟢 FIX: Only attempt to hit the asset file if executing live inside a real web browser
+    // Only attempt to hit the asset file if executing live inside a real web browser to avoid SSG Prerender breaks
     if (isPlatformBrowser(this.platformId)) {
       this.http.get<{ products: Product[] }>('assets/db.json').subscribe({
         next: (data) => {
@@ -131,7 +134,6 @@ export class AppComponent implements OnInit {
         }
       });
     } else {
-      // Server-side/Prerender fallback to keep the compiler happy during builds
       this.products = [];
     }
   }
@@ -474,7 +476,8 @@ export class AppComponent implements OnInit {
         ordersArray.push({
           storeName: this.storeName,
           pdf: pdfBase64,
-          selected: false
+          selected: false,
+          items: [...this.savedOrders] // Securely save copies of lists for runsheets
         });
 
         localStorage.setItem(formattedDate, JSON.stringify(ordersArray));
@@ -537,78 +540,55 @@ export class AppComponent implements OnInit {
     return `${normalizedStore}_${this.selectedActiveDate}.pdf`;
   }
 
-  downloadAllAsSinglePDF() {
-    const targets = this.viewingOrders.filter(o => o.selected);
-    const ordersToProcess = targets.length > 0 ? targets : this.viewingOrders;
+async downloadAllAsSinglePDF() {
+  const targets = this.viewingOrders.filter(o => o.selected);
+  const ordersToProcess = targets.length > 0 ? targets : this.viewingOrders;
 
-    if (ordersToProcess.length === 0) return;
+  if (ordersToProcess.length === 0) return;
 
-    try {
-      const doc = new jsPDF();
-      let currentCursorY = 20;
+  try {
+    const doc = new jsPDF();
+    let currentCursorY = 20;
 
-      for (let i = 0; i < ordersToProcess.length; i++) {
-        const receipt = ordersToProcess[i];
-        const matchAddr = this.savedAddresses.find(a => a.storeName.toLowerCase() === receipt.storeName.toLowerCase());
-        const displayLoc = matchAddr ? matchAddr.location : 'Tamil Nadu';
-        const displayPhone = matchAddr ? matchAddr.contactNumber : '9840123456';
+    for (const receipt of ordersToProcess) {
+      // Fetch items, fallback to empty array if missing
+      const items = receipt.items || [];
+      
+      // Calculate dynamic height needed
+      const estimatedHeight = 50 + (items.length * 10);
 
-        const estimatedSegmentHeight = 65;
-
-        if (currentCursorY + estimatedSegmentHeight > 275) {
-          doc.addPage();
-          currentCursorY = 20;
-        }
-
-        if (currentCursorY > 20) {
-          doc.setDrawColor(65, 105, 225);
-          doc.setLineWidth(0.5);
-          doc.line(14, currentCursorY, 196, currentCursorY);
-          currentCursorY += 10;
-        }
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(14);
-        doc.setTextColor(30, 58, 138);
-        doc.text("Annapoorna Masala - Order Segment", 14, currentCursorY);
-
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(10);
-        doc.setTextColor(26, 26, 26);
-        doc.text(`Store Destination: ${receipt.storeName.toUpperCase()}`, 14, currentCursorY + 8);
-        doc.text(`Location City: ${displayLoc} | Contact: +91 ${displayPhone}`, 14, currentCursorY + 14);
-        doc.text(`Invoice Run Date: ${this.selectedActiveDate}`, 14, currentCursorY + 20);
-
-        const segmentItems = [
-          [1, 'Sample Variety Item Pack', '50g', '1', 'Rs. 35.00', 'Rs. 35.00'],
-          ['', 'SEGMENT TOTAL SUMMARY', '', '', '', 'Rs. 35.00']
-        ];
-
-        autoTable(doc, {
-          startY: currentCursorY + 25,
-          head: [['S.No', 'Masala Variety', 'Measurement', 'Quantity', 'Unit Rate', 'Total Cost']],
-          body: segmentItems,
-          theme: 'striped',
-          styles: { fontSize: 9, cellPadding: 3 },
-          headStyles: { fillColor: [65, 105, 225] },
-          didParseCell: (data) => {
-            if (data.row.index === segmentItems.length - 1) {
-              data.cell.styles.fontStyle = 'bold';
-            }
-          }
-        });
-
-        currentCursorY = (doc as any).lastAutoTable.finalY + 15;
+      // Check for page overflow
+      if (currentCursorY + estimatedHeight > 275) {
+        doc.addPage();
+        currentCursorY = 20;
       }
 
-      doc.save(`Continuous_RunSheet_${this.selectedActiveDate}.pdf`);
-      alert(`Successfully generated continuous invoice document!`);
-    } catch (err) {
-      console.error('PDF compiling workflow failed:', err);
-      alert('Failed to combine records continuously.');
-    }
-  }
+      // Draw Store Header
+      doc.setFontSize(14);
+      doc.text(`Store: ${receipt.storeName}`, 14, currentCursorY);
+      doc.setFontSize(10);
+      doc.text(`Date: ${this.selectedActiveDate}`, 150, currentCursorY);
 
+      // Draw Table
+      autoTable(doc, {
+        startY: currentCursorY + 10,
+        head: [['S.No', 'Variety', 'Size', 'Qty', 'Rate', 'Total']],
+        body: items.length > 0 
+          ? items.map((item, idx) => [idx + 1, item.productName, item.measurement, item.quantity, `Rs. ${item.rate}`, `Rs. ${item.totalPrice}`])
+          : [['-', 'Missing data for this receipt', '-', '-', '-', '-']],
+        theme: 'striped',
+        styles: { fontSize: 8 }
+      });
+
+      currentCursorY = (doc as any).lastAutoTable.finalY + 15;
+    }
+
+    doc.save(`Consolidated_Receipts_${this.selectedActiveDate}.pdf`);
+  } catch (err) {
+    console.error("Compilation error:", err);
+    alert("Error generating consolidated PDF.");
+  }
+}
   deleteIndividualReceipt(index: number) {
     if (confirm(`Are you sure you want to delete the receipt for "${this.viewingOrders[index].storeName}"?`)) {
       this.viewingOrders.splice(index, 1);
@@ -651,7 +631,7 @@ export class AppComponent implements OnInit {
   private updateLocalStorageArchive() {
     if (isPlatformBrowser(this.platformId)) {
       if (this.viewingOrders.length > 0) {
-        const cleanedData = this.viewingOrders.map(({ storeName, pdf }) => ({ storeName, pdf }));
+        const cleanedData = this.viewingOrders.map(({ storeName, pdf, items }) => ({ storeName, pdf, items }));
         localStorage.setItem(this.selectedActiveDate, JSON.stringify(cleanedData));
       } else {
         localStorage.removeItem(this.selectedActiveDate);
@@ -819,9 +799,7 @@ export class AppComponent implements OnInit {
     this.addressForm.reset();
   }
 
-  // ========================================================
-  // 🟢 NEW FEATURE: EXPORT AND IMPORT DATA OPERATIONS
-  // ========================================================
+  // --- Data File Migration Sync Utilities ---
   exportLocalStorageData() {
     if (!isPlatformBrowser(this.platformId)) return;
 
@@ -829,12 +807,10 @@ export class AppComponent implements OnInit {
       const backupData: { [key: string]: string | null } = {};
       const keysToBackup = ['annapoorna_products', 'annapoorna_orders', 'annapoorna_addresses'];
 
-      // Extract explicit base master configurations keys
       keysToBackup.forEach(key => {
         backupData[key] = localStorage.getItem(key);
       });
 
-      // Iteratively extract any system date-marked history strings dynamically (YYYY-MM-DD pattern validation)
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
@@ -843,7 +819,6 @@ export class AppComponent implements OnInit {
         }
       }
 
-      // Convert backup snapshot to JSON string and create a downloadable Blob file stream
       const jsonString = JSON.stringify(backupData, null, 2);
       const blob = new Blob([jsonString], { type: 'application/json' });
 
@@ -876,7 +851,6 @@ export class AppComponent implements OnInit {
         }
 
         if (confirm("⚠️ Warning: Importing this file will overwrite existing active system settings on this device. Proceed?")) {
-          // Loop and securely inject key array parameters into device local sandbox storage
           Object.keys(parsedBackup).forEach(key => {
             if (parsedBackup[key] !== null) {
               localStorage.setItem(key, parsedBackup[key]);
