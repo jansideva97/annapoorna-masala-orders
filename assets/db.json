@@ -2,23 +2,261 @@
   "products": [
     {
       "id": 1,
-      "name": "Sambar Masala",
-      "measurements": ["50g", "100g", "250g", "500g"]
+      "name": "Ambur Biriyani Masala",
+      "category": "Regional Blends",
+      "measurements": ["40g"]
     },
     {
       "id": 2,
-      "name": "Chilli Powder",
-      "measurements": ["100g", "250g", "1kg"]
+      "name": "Aniseed Powder",
+      "category": "Pure Spices",
+      "measurements": ["50g", "500g"]
     },
     {
       "id": 3,
-      "name": "Garam Masala",
-      "measurements": ["50g", "100g"]
+      "name": "Baju Bonda Mix",
+      "category": "Ready to cook",
+      "measurements": ["200g"]
     },
     {
       "id": 4,
+      "name": "Briyani Masala",
+      "category": "Blended Spices",
+      "measurements": ["18g", "50g", "500g"]
+    },
+    {
+      "id": 5,
+      "name": "Chana Masala",
+      "category": "Blended Spices",
+      "measurements": ["500g"]
+    },
+    {
+      "id": 6,
+      "name": "Chat Masala",
+      "category": "Blended Spices",
+      "measurements": ["500g"]
+    },
+    {
+      "id": 7,
+      "name": "Chettinad Milagu Kulambu",
+      "category": "Regional Blends",
+      "measurements": ["40g"]
+    },
+    {
+      "id": 8,
+      "name": "Chicken 65 Masala",
+      "category": "Blended Spices",
+      "measurements": ["20g", "50g", "500g"]
+    },
+    {
+      "id": 9,
+      "name": "Chicken Masala",
+      "category": "Blended Spices",
+      "measurements": ["18g", "100g", "200g", "500g", "5kg"]
+    },
+    {
+      "id": 10,
+      "name": "Chilly Gobi Powder",
+      "category": "Blended Spices",
+      "measurements": ["50g"]
+    },
+    {
+      "id": 11,
+      "name": "Chilly Powder",
+      "category": "Pure Spices",
+      "measurements": ["20g", "50g", "100g", "200g", "500g", "5kg"]
+    },
+    {
+      "id": 12,
+      "name": "Corriander Powder",
+      "category": "Pure Spices",
+      "measurements": ["20g", "50g", "100g", "200g", "500g", "5kg"]
+    },
+    {
+      "id": 13,
+      "name": "Cumin Powder",
+      "category": "Pure Spices",
+      "measurements": ["50g", "500g"]
+    },
+    {
+      "id": 14,
+      "name": "Curry Powder",
+      "category": "Blended Spices",
+      "measurements": ["18g", "50g", "100g", "500g"]
+    },
+    {
+      "id": 15,
+      "name": "Dall Mix / Masala",
+      "category": "Blended Spices",
+      "measurements": ["50g", "500g"]
+    },
+    {
+      "id": 16,
+      "name": "Dindigul Biryani Masala",
+      "category": "Regional Blends",
+      "measurements": ["40g"]
+    },
+    {
+      "id": 17,
+      "name": "Dindigul Mutton Kulambu",
+      "category": "Regional Blends",
+      "measurements": ["40g"]
+    },
+    {
+      "id": 18,
+      "name": "Egg Masala",
+      "category": "Blended Spices",
+      "measurements": ["18g", "50g", "500g"]
+    },
+    {
+      "id": 19,
+      "name": "Fish Curry Masala",
+      "category": "Blended Spices",
+      "measurements": ["20g", "50g", "500g"]
+    },
+    {
+      "id": 20,
+      "name": "Fish Fry Masala",
+      "category": "Blended Spices",
+      "measurements": ["20g", "50g", "500g"]
+    },
+    {
+      "id": 21,
+      "name": "Garam Masala",
+      "category": "Blended Spices",
+      "measurements": ["15g", "50g", "500g"]
+    },
+    {
+      "id": 22,
+      "name": "Garlic Mix",
+      "category": "Blended Spices",
+      "measurements": ["50g", "500g"]
+    },
+    {
+      "id": 23,
+      "name": "Gulabjamoon (Offer & Non-Offer)",
+      "category": "Ready to cook",
+      "measurements": ["175g"]
+    },
+    {
+      "id": 24,
+      "name": "Idly Chilly Powder",
+      "category": "Blended Spices",
+      "measurements": ["25g", "50g", "100g", "500g", "5kg"]
+    },
+    {
+      "id": 25,
+      "name": "Kitchen King Masala",
+      "category": "Blended Spices",
+      "measurements": ["500g"]
+    },
+    {
+      "id": 26,
+      "name": "Kulambu Chilly Powder",
+      "category": "Blended Spices",
+      "measurements": ["25g", "50g", "500g", "5kg"]
+    },
+    {
+      "id": 27,
+      "name": "Kuruma Masala",
+      "category": "Blended Spices",
+      "measurements": ["500g"]
+    },
+    {
+      "id": 28,
+      "name": "Lemon Rice Powder",
+      "category": "Blended / Regional Blends",
+      "measurements": ["20g", "50g", "500g"]
+    },
+    {
+      "id": 29,
+      "name": "Mutton Chukka Masala",
+      "category": "Regional Blends",
+      "measurements": ["50g", "500g"]
+    },
+    {
+      "id": 30,
+      "name": "Mutton Masala",
+      "category": "Blended Spices",
+      "measurements": ["18g", "50g", "100g", "200g", "500g"]
+    },
+    {
+      "id": 31,
+      "name": "Naatu Kozhi / Kozhi Kulambu Masala",
+      "category": "Regional Blends",
+      "measurements": ["18g", "50g", "500g"]
+    },
+    {
+      "id": 32,
+      "name": "Nellai Pulu Kulambu",
+      "category": "Regional Blends",
+      "measurements": ["40g"]
+    },
+    {
+      "id": 33,
+      "name": "Pepper Chicken Masala",
+      "category": "Regional Blends",
+      "measurements": ["15g", "50g"]
+    },
+    {
+      "id": 34,
+      "name": "Pepper Powder",
+      "category": "Pure Spices",
+      "measurements": ["7g", "50g", "500g"]
+    },
+    {
+      "id": 35,
+      "name": "Rasam Powder",
+      "category": "Blended Spices",
+      "measurements": ["15g", "50g", "100g", "500g"]
+    },
+    {
+      "id": 36,
+      "name": "Sambar Powder",
+      "category": "Blended Spices",
+      "measurements": ["20g", "50g", "100g", "200g", "500g", "5kg"]
+    },
+    {
+      "id": 37,
+      "name": "Super Garam",
+      "category": "Blended Spices",
+      "measurements": ["500g"]
+    },
+    {
+      "id": 38,
+      "name": "Tamarind Powder / Tamarind Rice Powder",
+      "category": "Blended / Regional Blends",
+      "measurements": ["22g", "50g", "500g"]
+    },
+    {
+      "id": 39,
+      "name": "Tomato Rice Powder",
+      "category": "Blended Spices",
+      "measurements": ["50g", "500g"]
+    },
+    {
+      "id": 40,
       "name": "Turmeric Powder",
-      "measurements": ["100g", "250g", "500g"]
+      "category": "Pure Spices",
+      "measurements": ["20g", "50g", "100g", "200g", "500g", "5kg"]
+    },
+    {
+      "id": 41,
+      "name": "Tuticorin Parotta Salna Masala",
+      "category": "Regional Blends",
+      "measurements": ["40g"]
+    },
+    {
+      "id": 42,
+      "name": "Vatha Kulambu Masala",
+      "category": "Regional Blends",
+      "measurements": ["50g"]
+    },
+    {
+      "id": 43,
+      "name": "Vermicelli Payasam (Offer & Non-Offer)",
+      "category": "Ready to cook",
+      "measurements": ["175g"]
     }
   ]
 }
