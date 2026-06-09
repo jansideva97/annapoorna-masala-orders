@@ -9,15 +9,15 @@ interface Product {
   id: number;
   name: string;
   measurements: string[];
-  pricing?: { [weight: string]: number }; 
+  pricing?: { [weight: string]: number };
 }
 
 interface OrderItem {
   productName: string;
   measurement: string;
   quantity: number;
-  rate: number;         
-  totalPrice: number;   
+  rate: number;
+  totalPrice: number;
 }
 
 interface SavedReceiptMetadata {
@@ -42,7 +42,7 @@ interface StoreAddress {
 })
 export class AppComponent implements OnInit {
   activeTab: 'order' | 'master' | 'saved' | 'address' = 'order';
-  
+
   // Product Master Data
   products: Product[] = [];
   productForm!: FormGroup;
@@ -56,7 +56,7 @@ export class AppComponent implements OnInit {
   // PDF Customer Details
   storeName: string = '';
   storeLocation: string = '';
-  storeContact: string = ''; 
+  storeContact: string = '';
   showPdfModal: boolean = false;
 
   // Edit Modal
@@ -64,7 +64,7 @@ export class AppComponent implements OnInit {
   editingProductId: number | null = null;
   editingProduct: Product = { id: 0, name: '', measurements: [], pricing: {} };
   newVariantSize: string = '';
-  newVariantRate: number | null = null; 
+  newVariantRate: number | null = null;
 
   // Saved Receipts Tab Properties
   searchDate: string = new Date().toISOString().split('T')[0];
@@ -78,10 +78,10 @@ export class AppComponent implements OnInit {
   editingAddressId: number | null = null;
 
   constructor(
-    private http: HttpClient, 
+    private http: HttpClient,
     private fb: FormBuilder,
     @Inject(PLATFORM_ID) private platformId: Object
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.initForms();
@@ -113,21 +113,27 @@ export class AppComponent implements OnInit {
 
   // --- Product Master ---
   loadProductMaster() {
-    this.http.get<{ products: Product[] }>('assets/db.json').subscribe({
-      next: (data) => {
-        this.products = data.products.map(p => ({
-          ...p,
-          pricing: (p.pricing && Object.keys(p.pricing).length > 0) 
-                   ? p.pricing 
-                   : this.generateFallbackPricing(p.name, p.measurements)
-        }));
-        this.loadProductsFromStorage();
-      },
-      error: (error) => {
-        console.error('Error loading product master:', error);
-        this.loadProductsFromStorage();
-      }
-    });
+    // 🟢 FIX: Only attempt to hit the asset file if executing live inside a real web browser
+    if (isPlatformBrowser(this.platformId)) {
+      this.http.get<{ products: Product[] }>('assets/db.json').subscribe({
+        next: (data) => {
+          this.products = data.products.map(p => ({
+            ...p,
+            pricing: (p.pricing && Object.keys(p.pricing).length > 0)
+              ? p.pricing
+              : this.generateFallbackPricing(p.name, p.measurements)
+          }));
+          this.loadProductsFromStorage();
+        },
+        error: (error) => {
+          console.error('Error loading product master:', error);
+          this.loadProductsFromStorage();
+        }
+      });
+    } else {
+      // Server-side/Prerender fallback to keep the compiler happy during builds
+      this.products = [];
+    }
   }
 
   private generateFallbackPricing(productName: string, sizes: string[]): { [weight: string]: number } {
@@ -141,7 +147,7 @@ export class AppComponent implements OnInit {
     sizes.forEach(size => {
       const sanitizedSize = size.trim().toLowerCase().replace(/\s+/g, '');
       let matchedRate = 0;
-      
+
       for (const key in standardRates) {
         if (key.toLowerCase() === sanitizedSize) {
           matchedRate = standardRates[key];
@@ -221,7 +227,7 @@ export class AppComponent implements OnInit {
 
     const pricingMap: { [key: string]: number } = {};
     const selectedSizes: string[] = this.productForm.value.measurements;
-    
+
     selectedSizes.forEach(size => {
       const inputRate = prompt(`Enter standard retail unit price rate for size variant [ ${size} ] of "${this.productForm.value.name}":`, "50");
       pricingMap[size] = inputRate ? parseFloat(inputRate) || 50 : 50;
@@ -236,7 +242,7 @@ export class AppComponent implements OnInit {
 
     this.products.push(newProduct);
     this.saveProductsToStorage();
-    
+
     alert(`${newProduct.name} registered into master inventory tracking directory!`);
     this.productForm.reset();
     (this.productForm.get('measurements') as FormArray).clear();
@@ -275,14 +281,14 @@ export class AppComponent implements OnInit {
     const chosenRate = parseFloat(formVal.manualRate) || 0;
     const chosenQuantity = parseInt(formVal.quantity, 10) || 1;
 
-    const existingItemIndex = this.savedOrders.findIndex(item => 
-      item.productName === selectedProduct.name && 
+    const existingItemIndex = this.savedOrders.findIndex(item =>
+      item.productName === selectedProduct.name &&
       item.measurement === formVal.measurement
     );
 
     if (existingItemIndex !== -1) {
       this.savedOrders[existingItemIndex].quantity += chosenQuantity;
-      this.savedOrders[existingItemIndex].rate = chosenRate; 
+      this.savedOrders[existingItemIndex].rate = chosenRate;
       this.savedOrders[existingItemIndex].totalPrice = this.savedOrders[existingItemIndex].quantity * chosenRate;
     } else {
       const orderItem: OrderItem = {
@@ -395,7 +401,7 @@ export class AppComponent implements OnInit {
     const doc = new jsPDF();
     doc.setFontSize(18);
     doc.text("Annapoorna Masala - Order Receipt", 14, 20);
-    
+
     doc.setFontSize(11);
     doc.text(`Store Name: ${this.storeName}`, 14, 32);
     doc.text(`Location: ${this.storeLocation}`, 14, 40);
@@ -417,7 +423,7 @@ export class AppComponent implements OnInit {
     ]);
 
     autoTable(doc, {
-      startY: 62, 
+      startY: 62,
       head: [['S.No', 'Masala Variety', 'Measurement', 'Quantity', 'Unit Rate', 'Total Cost']],
       body: tableBody,
       didParseCell: (data) => {
@@ -430,7 +436,7 @@ export class AppComponent implements OnInit {
       }
     });
 
-    const formattedDate = new Date().toISOString().split('T')[0]; 
+    const formattedDate = new Date().toISOString().split('T')[0];
     const formattedStoreName = this.storeName.replace(/\s+/g, '_');
 
     doc.save(`${formattedStoreName}_${formattedDate}.pdf`);
@@ -449,13 +455,13 @@ export class AppComponent implements OnInit {
 
         if (!addressExists) {
           const autoNewAddress: StoreAddress = {
-            id: new Date().getTime(), 
+            id: new Date().getTime(),
             storeName: cleanTypedStore,
             location: cleanTypedLocation,
             contactNumber: cleanTypedContact
           };
           this.savedAddresses.push(autoNewAddress);
-          this.saveAddressesToStorage(); 
+          this.saveAddressesToStorage();
         }
 
         const existingStorageData = localStorage.getItem(formattedDate);
@@ -491,7 +497,7 @@ export class AppComponent implements OnInit {
       return;
     }
     this.selectedActiveDate = this.searchDate;
-    
+
     if (isPlatformBrowser(this.platformId)) {
       const savedData = localStorage.getItem(this.searchDate);
       if (savedData) {
@@ -547,7 +553,7 @@ export class AppComponent implements OnInit {
         const displayLoc = matchAddr ? matchAddr.location : 'Tamil Nadu';
         const displayPhone = matchAddr ? matchAddr.contactNumber : '9840123456';
 
-        const estimatedSegmentHeight = 65; 
+        const estimatedSegmentHeight = 65;
 
         if (currentCursorY + estimatedSegmentHeight > 275) {
           doc.addPage();
@@ -563,9 +569,9 @@ export class AppComponent implements OnInit {
 
         doc.setFont("helvetica", "bold");
         doc.setFontSize(14);
-        doc.setTextColor(30, 58, 138); 
+        doc.setTextColor(30, 58, 138);
         doc.text("Annapoorna Masala - Order Segment", 14, currentCursorY);
-        
+
         doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
         doc.setTextColor(26, 26, 26);
@@ -658,8 +664,8 @@ export class AppComponent implements OnInit {
   editProduct(index: number) {
     const product = this.products[index];
     this.editingProductId = index;
-    this.editingProduct = { 
-      ...product, 
+    this.editingProduct = {
+      ...product,
       measurements: [...product.measurements],
       pricing: product.pricing ? { ...product.pricing } : {}
     };
@@ -688,7 +694,7 @@ export class AppComponent implements OnInit {
       this.editingProduct.measurements.push(size);
       if (!this.editingProduct.pricing) this.editingProduct.pricing = {};
       this.editingProduct.pricing[size] = rate;
-      
+
       this.newVariantSize = '';
       this.newVariantRate = null;
     } else {
@@ -741,7 +747,7 @@ export class AppComponent implements OnInit {
       } else {
         this.savedAddresses = [
           { id: 1, storeName: 'Saravana Store', location: 'Chennai', contactNumber: '9840123456' },
-          { id: 2, storeName: 'Annam SuperMarket', location: 'Madurai', contactNumber: '9443567890' } 
+          { id: 2, storeName: 'Annam SuperMarket', location: 'Madurai', contactNumber: '9443567890' }
         ];
         localStorage.setItem('annapoorna_addresses', JSON.stringify(this.savedAddresses));
       }
@@ -773,7 +779,7 @@ export class AppComponent implements OnInit {
       this.editingAddressId = null;
     } else {
       const newAddress: StoreAddress = {
-        id: new Date().getTime(), 
+        id: new Date().getTime(),
         storeName: formValues.storeName.trim(),
         location: formValues.location.trim(),
         contactNumber: formValues.contactNumber.trim()
@@ -840,7 +846,7 @@ export class AppComponent implements OnInit {
       // Convert backup snapshot to JSON string and create a downloadable Blob file stream
       const jsonString = JSON.stringify(backupData, null, 2);
       const blob = new Blob([jsonString], { type: 'application/json' });
-      
+
       const element = document.createElement('a');
       element.href = URL.createObjectURL(blob);
       element.download = `Annapoorna_Backup_${new Date().toISOString().split('T')[0]}.json`;
