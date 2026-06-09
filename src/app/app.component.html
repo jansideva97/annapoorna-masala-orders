@@ -60,7 +60,6 @@
             <td>{{ idx + 1 }}</td>
             <td>{{ item.productName }}</td>
             <td>{{ item.measurement }}</td>
-            
             <td>
               <input type="number" 
                      [(ngModel)]="item.quantity" 
@@ -68,7 +67,6 @@
                      min="1" 
                      style="width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(65, 105, 225, 0.25); font-weight: 600; text-align: center;" />
             </td>
-            
             <td>
               <input type="number" 
                      [(ngModel)]="item.rate" 
@@ -77,9 +75,7 @@
                      step="0.01" 
                      style="width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(65, 105, 225, 0.25); font-weight: 600; text-align: center;" />
             </td>
-            
             <td><strong>Rs. {{ item.totalPrice.toFixed(2) }}</strong></td>
-            
             <td style="text-align: center; padding: 8px;">
               <button type="button" (click)="removeCartItem(idx)" class="btn btn-danger" style="width: auto; padding: 6px 12px; font-size: 13px; font-weight: 600; border-radius: 8px;">
                 Delete
@@ -166,6 +162,9 @@
       </label>
 
       <div style="display: flex; gap: 10px;">
+        <button (click)="downloadAllAsSinglePDF()" class="btn btn-success" style="width: auto; padding: 8px 14px; font-size: 0.9rem;">
+          Download Continuous RunSheet
+        </button>
         <button (click)="deleteSelectedReceipts()" [disabled]="!hasSelectedOrders()" class="btn btn-danger" style="width: auto; padding: 8px 14px; font-size: 0.9rem;">
           Delete Selected
         </button>
@@ -230,6 +229,14 @@
         <input id="addressLocation" type="text" formControlName="location" placeholder="e.g., T. Nagar, Chennai" />
       </div>
 
+      <div class="form-group">
+        <label for="addressContact">Contact Number (10-Digit Mobile):</label>
+        <input id="addressContact" type="text" formControlName="contactNumber" maxLength="10" placeholder="e.g., 9840123456" />
+        <div *ngIf="addressForm.get('contactNumber')?.touched && addressForm.get('contactNumber')?.invalid" style="color: #EF4444; font-size: 12px; font-weight: 600;">
+          * Valid 10-digit numeric contact mobile sequence is required.
+        </div>
+      </div>
+
       <div style="display: flex; gap: 10px;">
         <button type="submit" [disabled]="addressForm.invalid" class="btn btn-success" style="flex: 2;">
           {{ editingAddressId !== null ? 'Update Store Address' : 'Save New Address' }}
@@ -248,8 +255,9 @@
           <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
             <div style="flex: 1;">
               <strong>{{ addr.storeName }}</strong>
-              <div style="font-size: 14px; color: #333; margin-top: 4px;">
-                📍 Location: <span style="font-weight: 600; color: #1E40AF;">{{ addr.location }}</span>
+              <div style="font-size: 14px; color: #333; margin-top: 4px; display: flex; flex-direction: column; gap: 4px;">
+                <span>📍 Location: <span style="font-weight: 600; color: #1E40AF;">{{ addr.location }}</span></span>
+                <span>📞 Contact: <span style="font-weight: 600; color: #059669;">{{ addr.contactNumber || 'N/A' }}</span></span>
               </div>
             </div>
             
@@ -328,8 +336,17 @@
         <label for="modalLocation">Store Location City:</label>
         <input id="modalLocation" type="text" [(ngModel)]="storeLocation" placeholder="e.g., Chennai" />
       </div>
+
+      <div class="form-group">
+        <label for="modalContact">Contact Number (10-Digit Mobile):</label>
+        <input id="modalContact" type="text" [(ngModel)]="storeContact" maxLength="10" placeholder="e.g., 9840123456" />
+        <div *ngIf="storeContact && !isValidContact(storeContact)" style="color: #EF4444; font-size: 12px; font-weight: 600;">
+          * Contact spacing structure length must be exactly 10 digits.
+        </div>
+      </div>
+
       <div class="modal-actions">
-        <button (click)="generatePDF()" class="btn btn-success">Download Document</button>
+        <button (click)="generatePDF()" [disabled]="!storeName || !storeLocation || !isValidContact(storeContact)" class="btn btn-success">Download Document</button>
         <button (click)="closePdfPrompt()" class="btn btn-secondary">Go Back</button>
       </div>
     </div>
